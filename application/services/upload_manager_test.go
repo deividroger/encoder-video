@@ -23,7 +23,7 @@ func TestVideoServiceUpload(t *testing.T) {
 	videoService := services.NewVideoService()
 
 	videoService.Video = video
-	videoService.VideoRepository = &repo
+	videoService.VideoRepository = repo
 
 	err := videoService.Download("deivid-code-micro-videos")
 
