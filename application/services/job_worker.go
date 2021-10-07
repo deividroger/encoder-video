@@ -5,6 +5,7 @@ import (
 	"encoder/framework/utils"
 	"encoding/json"
 	"os"
+	"sync"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -16,6 +17,8 @@ type JobWorkerResult struct {
 	Message *amqp.Delivery
 	Error   error
 }
+
+var Mutex = &sync.Mutex{}
 
 func JobWorker(messageChannel chan amqp.Delivery,
 	returnChan chan JobWorkerResult,
@@ -31,8 +34,10 @@ func JobWorker(messageChannel chan amqp.Delivery,
 			continue
 		}
 
+		Mutex.Lock()
 		err = json.Unmarshal(message.Body, &jobService.VideoService.Video)
 		jobService.VideoService.Video.ID = uuid.NewV4().String()
+		Mutex.Unlock()
 
 		if err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)
@@ -45,8 +50,9 @@ func JobWorker(messageChannel chan amqp.Delivery,
 			returnChan <- returnJobResult(domain.Job{}, message, err)
 			continue
 		}
-
+		Mutex.Lock()
 		err = jobService.VideoService.InsertVideo()
+		Mutex.Unlock()
 
 		if err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)
@@ -59,7 +65,9 @@ func JobWorker(messageChannel chan amqp.Delivery,
 		job.Status = "STARTING"
 		job.CreateAt = time.Now()
 
+		Mutex.Lock()
 		_, err = jobService.JobRepository.Insert(&job)
+		Mutex.Unlock()
 
 		if err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)

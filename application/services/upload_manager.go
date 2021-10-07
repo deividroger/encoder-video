@@ -28,10 +28,10 @@ func (vu *VideoUpload) UploadObject(objectPath string, client *storage.Client, c
 	path := strings.Split(objectPath, os.Getenv("localStoragePath")+"/")
 
 	f, err := os.Open(objectPath)
-
 	if err != nil {
 		return err
 	}
+
 	defer f.Close()
 
 	wc := client.Bucket(vu.OutputBucket).Object(path[1]).NewWriter(ctx)
@@ -44,7 +44,9 @@ func (vu *VideoUpload) UploadObject(objectPath string, client *storage.Client, c
 	if err := wc.Close(); err != nil {
 		return err
 	}
+
 	return nil
+
 }
 
 func (vu *VideoUpload) loadPaths() error {
@@ -72,14 +74,14 @@ func (vu *VideoUpload) ProcessUpload(concurrency int, doneUpload chan string) er
 	if err != nil {
 		return err
 	}
-	uploadCLient, ctx, err := getClientUpload()
 
+	uploadClient, ctx, err := getClientUpload()
 	if err != nil {
 		return err
 	}
 
 	for process := 0; process < concurrency; process++ {
-		go vu.uploadWorker(in, returnChannel, uploadCLient, ctx)
+		go vu.uploadWorker(in, returnChannel, uploadClient, ctx)
 	}
 
 	go func() {
@@ -95,6 +97,7 @@ func (vu *VideoUpload) ProcessUpload(concurrency int, doneUpload chan string) er
 			break
 		}
 	}
+
 	return nil
 
 }
@@ -112,6 +115,7 @@ func (vu *VideoUpload) uploadWorker(in chan int, returnChan chan string, uploadC
 
 		returnChan <- ""
 	}
+
 	returnChan <- "upload completed"
 }
 
@@ -119,10 +123,8 @@ func getClientUpload() (*storage.Client, context.Context, error) {
 	ctx := context.Background()
 
 	client, err := storage.NewClient(ctx)
-
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return client, ctx, nil
 }
